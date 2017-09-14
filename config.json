@@ -1,0 +1,9 @@
+{
+  "serialPorts": [
+    "/dev/ttyS0"
+  ],
+  "mappingFiles": [
+    "cal0.xml",
+    "cal1.xml"
+  ]
+}
