@@ -1,4 +1,7 @@
 {
+  // Set the web server port (you can also use the PORT environment variable)
+  // port: 3000,
+
   // Adjust the serial port names to match your devices.
   // E.g. "COM1" (Windows), "/dev/ttyUSB0" (Linux)
   // "serialPorts": [
@@ -9,6 +12,9 @@
     "COM1",
     "COM2"
   ],
+
+  // Set XML mappings; the format of these files came from the sample Unity
+  // project at https://github.com/supersoulstudio/100ButtonsExample
   "mappingFiles": [
     "cal0.xml",
     "cal1.xml"

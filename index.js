@@ -91,7 +91,7 @@ app.get('/buttons', (_req, res) => {
 });
 
 
-let port = process.env.PORT || 3000;
+let port = process.env.PORT || config.port || 3000;
 console.log(chalk.yellow.bold(`Starting server on port ${port}...`));
 console.log(chalk.blue.bold(`Visit http://localhost:${port}/ to see a demo status page.`));
 app.listen(port);
