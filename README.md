@@ -14,7 +14,7 @@ Made for the [100 Button Jam](https://itch.io/jam/100-button-game-jam).
 ## HOW TO: The quick and the dirty
 
 0. Install [Node.js and npm](https://nodejs.org/en/download/current/).
-1. Download this project (or clone the repo).
+1. Download the [latest release](https://github.com/mildmojo/buttons-are-cool-node/releases) (or use the green button at the top right to download or [clone](https://help.github.com/articles/which-remote-url-should-i-use/) the repo).
 2. At the command line, switch to the project's folder.
 3. Install yarn: `npm install -g yarn` (optional)
 4. Install project dependencies: `yarn install` (or `npm install`)
@@ -22,11 +22,11 @@ Made for the [100 Button Jam](https://itch.io/jam/100-button-game-jam).
 6. Edit `config.json`; enter the names of your serial port(s) that have button
    controllers attached.
 7. Start the server: `yarn run server` (or `npm run server`)
-8. Visit [http://localhost:3000](http://localhost:3000) to see the debugging
+8. Visit http://localhost:3000 to see the debugging
    page. Verify that it responds (slowly) to button presses on your controller.
 
 You're all set! Use any web or HTTP library in any language to connect to
-[](http://localhost:3000/buttons), then decode the JSON for use in your own
+http://localhost:3000/buttons, then decode the JSON for use in your own
 software. You can even rip out the contents of `/public` and add your own
 web page and javascript there. The server serves any files in `/public`.
 
