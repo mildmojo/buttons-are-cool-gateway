@@ -4,11 +4,19 @@
   "description": "Node.js server to expose the 100 button USB serial board via HTTP and websockets.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "lint": "$(npm bin)/eslint *.js",
+    "server": "node index.js",
+    "test": "$(npm bin)/mocha test/**/*.js"
   },
   "author": "mildmojo",
   "license": "MIT",
+  "devDependencies": {
+    "eslint": "^4.7.0",
+    "eslint-plugin-async-await": "0.0.0",
+    "mocha": "^3.5.3"
+  },
   "dependencies": {
+    "chalk": "^2.1.0",
     "cjson": "^0.5.0",
     "express": "^4.15.4",
     "serialport": "^5.0.0",

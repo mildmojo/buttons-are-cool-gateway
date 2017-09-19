@@ -1,46 +1,60 @@
 'use strict';
 const fs = require('fs');
-const EventEmitter = require('events').EventEmitter;
 const express = require('express');
-const SerialPort = require('serialport/test');
-const MockBinding = SerialPort.Binding; // DEBUG
+// const SerialPort = require('serialport/test');
+const SerialPort = require('serialport');
+// const MockBinding = SerialPort.Binding; // DEBUG
+const chalk = require('chalk');
 const cjson = require('cjson');
 const xml2js = require('xml2js');
-const config = cjson.load('./config.json');
-const ButtonStatus = require('./buttonStatus');
+const ButtonStatus = require('./lib/buttonStatus');
 const app = express();
-config.serialPorts.forEach(p => MockBinding.createPort(p)); // DEBUG
+// config.serialPorts.forEach(p => MockBinding.createPort(p)); // DEBUG
 
-let buttonStatus = null;
+let buttonStatuses = [];
 let ports = [];
-debugger;
-init().catch(console.error);
+
+if (!fs.existsSync('./config.json')) {
+  console.warn(chalk.red.bold('Could not find config.json. Please copy' +
+    ' config.json.example to config.json and edit it.'));
+  process.exit(1);
+}
+
+const config = cjson.load('./config.json');
+
+if (!config.serialPorts || !config.serialPorts.length) {
+  console.warn('No serial ports configured! Please specify serial port(s) in config.json.');
+  process.exit(1);
+}
+
+init().catch(console.log);
 
 async function init() {
   let mappings = [];
   let portNames = [];
 
-  config.serialPorts.forEach(async (portName, i) => {
+  for (let i = 0; i < config.serialPorts.length; i++) {
+    let portName = config.serialPorts[i];
     let xml = await readFile(config.mappingFiles[i]).catch(console.error);
     let parsedXML = await parseXML(xml).catch(console.error);
-    // let xml = ''; //await readFile(config.mappingFiles[i]).catch(console.error);
-    // let parsedXML = {ArrayOfInt: {int: [0]  }}; //await parseXML(xml).catch(console.error);
     mappings.push(parsedXML.ArrayOfInt.int);
     portNames.push(portName);
-  });
+  }
 
-  buttonStatus = new ButtonStatus(mappings);
-
-  portNames.forEach(portName => {
+  portNames.forEach((portName, portIdx) => {
     let port = new SerialPort(portName, { baudrate: 9600 });
-    port.on('open', port.binding.emitData(Buffer.from([0,0,0,0,0,0,0,1]))); // DEBUG
+    port.on('open', () => {
+      port.on('data', chunk => {
+        buttonStatuses[portIdx].update(chunk);
+      });
 
-    port.on('data', chunk => {
-      buttonStatus.update(i, chunk);
+      port.on('error', err => console.warn(`Error: ${err}`));
+
+      // port.binding.emitData(Buffer.from([0,0,0,0,0,0xFE,0xFE,1])); // DEBUG
     });
 
-    port.on('error', err => console.warn(`Error: ${err}`));
 
+    buttonStatuses.push(new ButtonStatus(mappings[portIdx]));
     ports.push(port);
   });
 }
@@ -64,9 +78,20 @@ function parseXML(xml) {
   });
 }
 
-app.get('/buttons', (req, res, done) => {
-  res.send(buttonStatus.toJSON());
+
+app.use('/', express.static('./public'));
+
+app.get('/buttons', (_req, res) => {
+  let status = { devices: [] };
+  buttonStatuses.forEach((buttonStatus, idx) => {
+    status.devices[idx] = buttonStatus.toJSON();
+    status.devices[idx].name = config.serialPorts[idx];
+  });
+  res.send(JSON.stringify(status, null, ' '));
 });
 
 
-app.listen(3000);
+let port = process.env.PORT || 3000;
+console.log(chalk.yellow.bold(`Starting server on port ${port}...`));
+console.log(chalk.blue.bold(`Visit http://localhost:${port}/ to see a demo status page.`));
+app.listen(port);

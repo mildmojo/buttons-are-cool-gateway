@@ -1,0 +1,20 @@
+{
+  "env": {
+    "node": true,
+    "es6": true
+  },
+
+  "plugins": ["async-await"],
+
+  "parserOptions": {
+    "ecmaVersion": 2017
+  },
+
+  "extends": "eslint:recommended",
+
+  "rules": {
+    "require-await": 2,
+    "arrow-parens": 0,
+    "no-console": 0
+  }
+}

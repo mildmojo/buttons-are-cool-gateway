@@ -1,7 +1,9 @@
 {
-  "serialPorts": [
-    "/dev/ttyS0"
-  ],
+  // E.g. "COM1" (Windows), "/dev/ttyUSB0" (Linux)
+  // "serialPorts": [
+  //   "/dev/ttyS0",
+  //   "/dev/ttyS1"
+  // ],
   "mappingFiles": [
     "cal0.xml",
     "cal1.xml"

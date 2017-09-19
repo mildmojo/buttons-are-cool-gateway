@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>buttons-are-cool server demo</title>
+    <meta charset="utf-8" />
+    <script type="text/javascript">
+      function ready(fn) {
+        if (document.attachEvent ? document.readyState === "complete" : document.readyState !== "loading"){
+          fn();
+        } else {
+          document.addEventListener('DOMContentLoaded', fn);
+        }
+      }
+
+      ready(function() {
+        var container = document.querySelector('.container');
+
+        var loop = setInterval(function() {
+          fetch('/buttons')
+            .then(function(res) {
+              return res.json();
+            })
+            .then(refreshButtons);
+        }, 500);
+
+        function refreshButtons(json) {
+          container.innerHTML = '';
+          for (var i = 0; i < json.devices.length; i++) {
+            var device = json.devices[i];
+            var buttons = device.buttons;
+
+            var title = document.createElement('h2');
+            title.innerHTML = device.name;
+            container.appendChild(title);
+
+            var deviceDiv = document.createElement('div');
+            deviceDiv.classList.add('device');
+            container.appendChild(deviceDiv);
+
+            Object.keys(buttons).forEach(function(buttonNum) {
+              var div = document.createElement('div');
+              div.innerHTML = '<div><span class="number-column">' + buttonNum + ':</span> ' + (buttons[buttonNum] ? '✅' : '⭕') + '</div>';
+              deviceDiv.appendChild(div);
+            });
+          }
+        }
+      });
+
+      function parseHTML(str) {
+        var tmp = document.implementation.createHTMLDocument();
+        tmp.body.innerHTML = str;
+        return tmp.body.children;
+      }
+    </script>
+
+    <style type="text/css">
+      body {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: nowrap;
+        width: 100vw;
+        height: 100vh;
+        font-family: "Tahoma";
+      }
+      body h2 {
+        clear: both;
+      }
+      .container {
+        display: flex;
+        flex-direction: column;
+        flex-wrap: nowrap;
+        margin: 0;
+        padding: 10px;
+        height: auto;
+        width: 50%;
+        min-width: 300px;
+        min-height: 600px;
+        max-width: 600px;
+        border: 1px solid black;
+      }
+      .device {
+        display: flex;
+        flex-direction: column;
+        flex-wrap: wrap;
+        width: 100%;
+        max-height: 300px;
+      }
+      .device h2 {
+        display: block;
+      }
+      .device > div {
+        width: 20%;
+      }
+      .number-column {
+        display: block;
+        float: left;
+        min-width: 3rem;
+      }
+      .center {
+        text-align: center;
+      }
+      .full-width {
+        width: 100%;
+      }
+      .no-decorate {
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="center full-width">
+      <h2><a class="no-decorate" href="http://buttonsare.cool">1000 Button Project Test Page</a></h2>
+    </div>
+    <div class="container"></div>
+  </body>
+</html>
