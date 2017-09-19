@@ -1,9 +1,14 @@
 {
+  // Adjust the serial port names to match your devices.
   // E.g. "COM1" (Windows), "/dev/ttyUSB0" (Linux)
   // "serialPorts": [
   //   "/dev/ttyS0",
   //   "/dev/ttyS1"
   // ],
+  "serialPorts": [
+    "COM1",
+    "COM2"
+  ],
   "mappingFiles": [
     "cal0.xml",
     "cal1.xml"
