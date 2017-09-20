@@ -6,6 +6,7 @@
   "scripts": {
     "lint": "$(npm bin)/eslint *.js",
     "server": "node index.js",
+    "test-server": "TESTMODE=true node index.js",
     "test": "$(npm bin)/mocha test/**/*.js"
   },
   "author": "mildmojo",
