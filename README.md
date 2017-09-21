@@ -6,8 +6,13 @@ This is a Node.js server that exposes [@barelyconcealed](https://twitter.com/bar
 [1000 Button Project](http://buttonsare.cool/) hardware as a web API. Just
 about every programming environment on the planet can make web requests.
 
-Current code returns each connected serial device's state in a JSON
-list at `/buttons`. See [JSON Format](#json-format) below.
+Current code provides a WebSocket endpoint for fast button press events. It also
+returns each connected serial device's state in a JSON list at
+`http://localhost:3000/buttons`, in case you'd rather use HTTP GET requests to
+access the API. (See [JSON Format](#json-format) below.)
+
+There's a demo page at `/public/index.js` that has examples of WebSockets and
+HTTP polling for reading button events.
 
 Made for the [100 Button Jam](https://itch.io/jam/100-button-game-jam).
 
@@ -21,14 +26,19 @@ Made for the [100 Button Jam](https://itch.io/jam/100-button-game-jam).
 5. Copy `config.json.example` to `config.json`.
 6. Edit `config.json`; enter the names of your serial port(s) that have button
    controllers attached.
-7. Start the server: `yarn run server` (or `npm run server`)
+7. Start the server in test mode: `yarn run test-server` (or `npm run test-server`)
 8. Visit http://localhost:3000 to see the debugging
-   page. Verify that it responds (slowly) to button presses on your controller.
+   page. Buttons should flicker as the server simulates activity.
+9. Start the server with the button board attached: `yarn run server`
+10. Reload http://localhost:3000 and see that pressing buttons updates the UI.
 
 You're all set! Use any web or HTTP library in any language to connect to
 http://localhost:3000/buttons, then decode the JSON for use in your own
 software. You can even rip out the contents of `/public` and add your own
 web page and javascript there. The server serves any files in `/public`.
+
+Or use WebSockets. Connect to ws://localhost:3000 and listen for button press
+events. They're faster and more efficient than polling.
 
 ### Configuration
 
@@ -62,11 +72,42 @@ append it to the last 7 bytes you received and start decoding the full bitfield.
 ## Downsides of a Web API
 
 - Untested with the real hardware as of this writing (2017-09-19).
-- Latency. You can poll pretty fast, but you can't possibly poll the server fast
-  enough for a fighting game to feel good. Maybe there are other kinds of games
-  you could make?
+- Polling latency. You can poll pretty fast, but you can't possibly poll the
+  server fast enough for a fighting game to feel good. Definitely use WebSockets
+  if you can. If not, maybe there are other kinds of games you could make?
 - Setup. Ya gotta get Node.js running on your local machine. Probably not harder
   than getting the Arduino IDE set up.
+
+## WebSocket events
+
+The WebSocket address is `ws://localhost:3000/`.
+
+WebSocket events arrive as stringified JSON to the WebSocket's `onmessage`
+handler. The JSON objects represent events. Events have a `name` and other
+associated attributes.
+
+Examples:
+
+```
+{
+  name: 'buttonUp',
+  deviceNum: 0,
+  deviceName: 'COM1',
+  buttonNum: 8
+}
+
+{
+  name: 'buttonDown',
+  deviceNum: 1,
+  deviceName: 'COM2',
+  buttonNum: 5
+}
+
+{
+  name: 'testMode',
+  isTestMode: true
+}
+```
 
 ## JSON Format
 
@@ -77,6 +118,7 @@ the XML mappings from the 100 Buttons [sample Unity project](https://github.com/
 
 ```json
 {
+ "testMode": true,
  "devices": [
   {
    "length": 4,
@@ -106,10 +148,7 @@ the XML mappings from the 100 Buttons [sample Unity project](https://github.com/
 
 Likely stuff:
 
-- Add websocket support with socket.io. Should be a piece of cake and way more
-  responsive with individual button events.
 - Refactor the serial port code out of `index.js`. It's kinda ugly.
-- Add a testing mode that sends fake button mashing events.
 - Deprecate the XML button mappings in favor of `config.json` settings.
 
 Less-likely stuff:
