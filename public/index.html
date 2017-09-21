@@ -2,8 +2,13 @@
 <html lang="en">
   <head>
     <title>buttons-are-cool server demo</title>
-    <meta charset="utf-8" />
+    <meta charset="utf-8"></meta>
+    <script type="text/javascript" src="minivents.min.js"></script>
+    <script type="text/javascript" src="dat.gui.min.js"></script>
     <script type="text/javascript">
+      // Build a hierarchy of DOM nodes for faster manipulation.
+      var deviceContainers = [];
+
       function ready(fn) {
         if (document.attachEvent ? document.readyState === "complete" : document.readyState !== "loading"){
           fn();
@@ -13,42 +18,191 @@
       }
 
       ready(function() {
-        var body = document.querySelector('body');
-        var container = document.querySelector('.container');
+        createButtons();
+        websocketListener.start();
 
-        var loop = setInterval(function() {
+        // Set up dat.gui for switching connection types and params at runtime.
+        var gui = new dat.GUI();
+        gui.add(guiController, 'mode').listen();
+        gui.add(guiController, 'startWebSocket');
+        gui.add(guiController, 'startHTTPPolling');
+        gui.add(httpListener, 'interval').min(100).max(5000);
+      });
+
+      var guiController = {
+        mode: 'WebSocket Events',
+        startWebSocket: function() {
+          httpListener.stop();
+          websocketListener.start();
+          this.mode = 'WebSocket Events';
+        },
+        startHTTPPolling: function() {
+          websocketListener.stop();
+          httpListener.start();
+          this.mode = 'HTTP Polling';
+        }
+      };
+
+      // Create a bunch of HTML for device names and button statuses.
+      function createButtons() {
+        var container = document.querySelector('.container');
+        container.innerHTML = '';
+        for (var deviceNum = 0; deviceNum < 6; deviceNum++) {
+          deviceContainers[deviceNum] = { buttons: {} };
+
+          var title = document.createElement('h2');
+          title.classList.add('device-title');
+          title.classList.add('hidden');
+          container.appendChild(title);
+          deviceContainers[deviceNum].title = title;
+
+          var deviceDiv = document.createElement('div');
+          deviceDiv.classList.add('device');
+          deviceDiv.classList.add('hidden');
+          container.appendChild(deviceDiv);
+          deviceContainers[deviceNum].buttonContainer = deviceDiv;
+
+          for (var buttonNum = 0; buttonNum < 60; buttonNum++) {
+            var div = document.createElement('div');
+            div.classList.add('hidden');
+            div.innerHTML = '<span class="number-column">' + buttonNum + ':</span> <span class="icon"></span>';
+            deviceDiv.appendChild(div);
+            deviceContainers[deviceNum].buttons[buttonNum] = div;
+          }
+        }
+      }
+
+      // ***********************************************************************
+      // Example HTTP polling event emitter. Emits 'testMode', 'buttonUp', and
+      // 'buttonDown' events after diffing device snapshots between requests.
+      // ***********************************************************************
+      var httpListener = {
+        loop: null,
+        testMode: false,
+        lastDevices: [],
+        interval: 300,
+        start: function() {
+          this.run();
+        },
+        run: function() {
+          var self = this;
+          // Call the API.
           fetch('/buttons')
             .then(function(res) {
               return res.json();
             })
-            .then(refreshButtons);
-        }, 300);
-
-        function refreshButtons(json) {
-          container.innerHTML = '';
-          if (json.testMode && !body.classList.contains('test-mode')) {
-            body.classList.add('test-mode');
-          }
-          for (var i = 0; i < json.devices.length; i++) {
-            var device = json.devices[i];
-            var buttons = device.buttons;
-
-            var title = document.createElement('h2');
-            title.innerHTML = device.name;
-            container.appendChild(title);
-
-            var deviceDiv = document.createElement('div');
-            deviceDiv.classList.add('device');
-            container.appendChild(deviceDiv);
-
-            Object.keys(buttons).forEach(function(buttonNum) {
-              var div = document.createElement('div');
-              div.innerHTML = '<div><span class="number-column">' + buttonNum + ':</span> ' + (buttons[buttonNum] ? '✅' : '⭕') + '</div>';
-              deviceDiv.appendChild(div);
+            .then(function(json) {
+              if (json.testMode !== self.testMode) {
+                self.emit('testMode', {isTestMode: json.testMode});
+              }
+              // Devices changed? Initial poll? Refresh everything.
+              if (json.devices.length !== self.lastDevices.length) {
+                self.lastDevices = json.devices;
+                // Emit events for all buttons.
+                json.devices.forEach(function(device, deviceIdx) {
+                  Object.keys(device.buttons).forEach(function(buttonNum) {
+                    var eventName = device.buttons[buttonNum] ? 'buttonDown' : 'buttonUp';
+                    self.emit(eventName, {deviceNum: deviceIdx, buttonNum: buttonNum, deviceName: device.name});
+                  });
+                });
+              } else {
+                json.devices.forEach(function(newDevice, deviceIdx) {
+                  var oldDevice = self.lastDevices[deviceIdx];
+                  // Emit events only for buttons changed since last update.
+                  Object.keys(newDevice.buttons).forEach(function(buttonNum) {
+                    if (newDevice.buttons[buttonNum] !== oldDevice.buttons[buttonNum]) {
+                      var eventName = newDevice.buttons[buttonNum] ? 'buttonDown' : 'buttonUp';
+                      self.emit(eventName, {deviceNum: deviceIdx, buttonNum: buttonNum, deviceName: newDevice.name});
+                    }
+                  })
+                });
+                self.lastDevices = json.devices;
+              }
+              // Poll again at an interval.
+              self.loop = setTimeout(self.run.bind(self), self.interval);
             });
-          }
+        },
+        stop: function() {
+          clearInterval(this.loop);
         }
-      });
+      };
+      Events(httpListener);
+      // Wire up events.
+      httpListener.on('testMode', setTestMode);
+      httpListener.on('buttonUp', setButtonUp);
+      httpListener.on('buttonDown', setButtonDown);
+
+      // ***********************************************************************
+      // Example WebSocket event emitter. Emits 'testMode', 'buttonUp', and
+      // 'buttonDown' events as they come in from the server.
+      // ***********************************************************************
+      var websocketListener = {
+        socket: null,
+        start: function() {
+          var isReconnecting = false;
+          var url = new URL(window.location);
+          var protocol = url.protocol === 'https:' ? 'wss://' : 'ws://';
+          var host = url.host;
+          var path = url.pathname;
+
+          this.socket = new WebSocket(protocol + host + '/' + path);
+
+          this.socket.onopen = function() {
+            console.log('WebSocket connected!');
+          };
+          this.socket.onmessage = function(msg) {
+            var packet = JSON.parse(msg.data);
+            this.emit(packet.name, packet);
+          }.bind(this);
+          this.socket.onerror = this.socket.onclose = function(err) {
+            if (!isReconnecting) {
+              isReconnecting = true;
+              this.start();
+            }
+          }.bind(this);
+        },
+        stop: function() {
+          if (!this.socket) return;
+          this.socket.onclose = null;
+          this.socket.close();
+        }
+      };
+      Events(websocketListener);
+      // Wire up events.
+      websocketListener.on('testMode', setTestMode);
+      websocketListener.on('buttonUp', setButtonUp);
+      websocketListener.on('buttonDown', setButtonDown);
+
+      // On testMode events, set the test-mode class on the body element to pick
+      // up appropriate page style and mode message.
+      function setTestMode(packet) {
+        var body = document.querySelector('body');
+        if (packet.isTestMode && !body.classList.contains('test-mode')) {
+          body.classList.add('test-mode');
+        } else if (!packet.isTestMode) {
+          body.classList.remove('test-mode');
+        }
+      }
+
+      // On buttonUp events, show device title, show device button container,
+      // show button status, and remove button "pressed" state.
+      function setButtonUp(packet) {
+        deviceContainers[packet.deviceNum].title.classList.remove('hidden');
+        deviceContainers[packet.deviceNum].title.innerHTML = packet.deviceName;
+        deviceContainers[packet.deviceNum].buttonContainer.classList.remove('hidden');
+        deviceContainers[packet.deviceNum].buttons[packet.buttonNum].classList.remove('hidden');
+        deviceContainers[packet.deviceNum].buttons[packet.buttonNum].classList.remove('pressed');
+      }
+
+      // On buttonDown events, show device title, show device button container,
+      // show button status, and mark button "pressed".
+      function setButtonDown(packet) {
+        deviceContainers[packet.deviceNum].title.classList.remove('hidden');
+        deviceContainers[packet.deviceNum].title.innerHTML = packet.deviceName;
+        deviceContainers[packet.deviceNum].buttonContainer.classList.remove('hidden');
+        deviceContainers[packet.deviceNum].buttons[packet.buttonNum].classList.remove('hidden');
+        deviceContainers[packet.deviceNum].buttons[packet.buttonNum].classList.add('pressed');
+      }
     </script>
 
     <style type="text/css">
@@ -137,8 +291,20 @@
         width: 100%;
       }
 
+      .hidden {
+        display: none;
+      }
+
       .no-decorate {
         text-decoration: none;
+      }
+
+      .device span.icon::after {
+        content: '⭕';
+      }
+
+      .device .pressed span.icon::after {
+        content: '✅';
       }
     </style>
   </head>
