@@ -1,5 +1,10 @@
-node_modules
-*.sublime*
+# Per-deployment and temp stuff
+node_modules/
+dist/
 config.json
+
+# Dev stuff
+*.sublime*
+
+# We use YARN 'round these parts!
 package-lock.json
-dist/*/
