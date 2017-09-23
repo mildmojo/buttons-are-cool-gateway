@@ -86,6 +86,22 @@ describe('Bitfield', () => {
       bfSrc = bfSrc.setAt(0, 0);
       assert.notDeepEqual(bfDest.buffer, bfSrc.buffer);
     });
+
+    it('should copy from a shorter bitfield', () => {
+      let bfSrc = Bitfield.fromBits([1,0,1]);
+      let bfDest = new Bitfield(Buffer.from([0x00, 0x00]));
+
+      bfDest.copyFrom(bfSrc);
+      assert.deepEqual(bfDest.toString(), "10100000000000");
+    })
+
+    it('should copy from a longer bitfield', () => {
+      let bfSrc = new Bitfield(Buffer.from([0x0E, 0xFE]));
+      let bfDest = new Bitfield(7);
+
+      bfDest.copyFrom(bfSrc);
+      assert.deepEqual(bfDest.toString(), "1110000");
+    });
   });
 
   describe('copyTo()', () => {
@@ -160,10 +176,12 @@ describe('Bitfield', () => {
       let bf1 = Bitfield.fromBits([1,0,1]);
       let bf2 = Bitfield.fromBits([1,1,0]);
       let changeIdx = 1;
-      for (let {index, value} of bf1.xor(bf2)) {
-        assert.equal(index, changeIdx++)
-        assert.equal(value, bf1.at(index));
-      }
+      let changes = [...bf1.xor(bf2)];
+      assert.equal(changes.length, 2);
+      assert.equal(changes[0].index, 1);
+      assert.equal(changes[0].value, 0);
+      assert.equal(changes[1].index, 2);
+      assert.equal(changes[1].value, 1);
     });
   });
 });

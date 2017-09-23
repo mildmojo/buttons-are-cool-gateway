@@ -7,7 +7,7 @@ describe('buttonStatus', () => {
   let buttonStatus = null;
 
   beforeEach(() => {
-    buttonStatus = new ButtonStatus([0,1,2]);
+    buttonStatus = new ButtonStatus([0,1,2,3,4,5,6,7]);
   });
 
   describe('update()', () => {
@@ -28,6 +28,23 @@ describe('buttonStatus', () => {
       });
 
       buttonStatus.update(Buffer.from([0x07]));
+    });
+
+    it('should fire buttonDown event when updating with partial packets', done => {
+      let buttonsDown = [];
+      let packetBytes = [0x02, 0x00, 0x01];
+
+      buttonStatus.on('buttonDown', button => {
+        assert.equal(button, 0);
+        done();
+      });
+
+      function update(bytes) {
+        buttonStatus.update(Buffer.from([bytes.shift()]));
+        if (bytes.length > 0) setImmediate(() => update(bytes), 100);
+      }
+
+      update(packetBytes);
     });
 
     it('should fire buttonUp event', done => {
@@ -51,8 +68,8 @@ describe('buttonStatus', () => {
       let json = buttonStatus.toJSON();
       assert.ok('length' in json);
       assert.ok('buttons' in json);
-      assert.equal(json.length, 3);
-      assert.deepEqual(json.buttons, {0:0, 1:0, 2:0});
+      assert.equal(json.length, 8);
+      assert.deepEqual(json.buttons, {0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0});
     });
   });
 })
