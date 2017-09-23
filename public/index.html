@@ -19,27 +19,37 @@
 
       ready(function() {
         createButtons();
-        websocketListener.start();
+        guiController.startWebSocket();
 
         // Set up dat.gui for switching connection types and params at runtime.
         var gui = new dat.GUI();
         gui.add(guiController, 'mode').listen();
+        gui.add(guiController.listener, 'state').listen();
+        gui.add(guiController, 'stopAll');
         gui.add(guiController, 'startWebSocket');
         gui.add(guiController, 'startHTTPPolling');
         gui.add(httpListener, 'interval').min(100).max(5000);
+        setInterval(() => console.log(guiController.listener.state), 1000);
       });
 
       var guiController = {
         mode: 'WebSocket Events',
+        listener: null,
         startWebSocket: function() {
-          httpListener.stop();
-          websocketListener.start();
+          if (this.listener) this.listener.stop();
           this.mode = 'WebSocket Events';
+          this.listener = websocketListener;
+          this.listener.start();
         },
         startHTTPPolling: function() {
-          websocketListener.stop();
-          httpListener.start();
+          if (this.listener) this.listener.stop();
           this.mode = 'HTTP Polling';
+          this.listener = httpListener;
+          this.listener.start();
+        },
+        stopAll: function() {
+          httpListener.stop();
+          websocketListener.stop();
         }
       };
 
@@ -77,10 +87,11 @@
       // 'buttonDown' events after diffing device snapshots between requests.
       // ***********************************************************************
       var httpListener = {
+        interval: 300,
+        state: 'disconnected',
         loop: null,
         testMode: false,
         lastDevices: [],
-        interval: 300,
         start: function() {
           this.run();
         },
@@ -89,6 +100,7 @@
           // Call the API.
           fetch('/buttons')
             .then(function(res) {
+              self.state = 'connected';
               return res.json();
             })
             .then(function(json) {
@@ -120,10 +132,12 @@
               }
               // Poll again at an interval.
               self.loop = setTimeout(self.run.bind(self), self.interval);
-            });
+            })
+            .catch(() => self.state = 'disconnected');
         },
         stop: function() {
           clearInterval(this.loop);
+          this.state = 'stopped';
         }
       };
       Events(httpListener);
@@ -138,6 +152,7 @@
       // ***********************************************************************
       var websocketListener = {
         socket: null,
+        state: 'disconnected',
         start: function() {
           var isReconnecting = false;
           var url = new URL(window.location);
@@ -149,13 +164,15 @@
 
           this.socket.onopen = function() {
             console.log('WebSocket connected!');
-          };
+            this.state = 'connected';
+          }.bind(this);
           this.socket.onmessage = function(msg) {
             var packet = JSON.parse(msg.data);
             this.emit(packet.name, packet);
           }.bind(this);
           this.socket.onerror = this.socket.onclose = function(err) {
             if (!isReconnecting) {
+              this.state = 'disconnected';
               isReconnecting = true;
               this.start();
             }
@@ -165,6 +182,7 @@
           if (!this.socket) return;
           this.socket.onclose = null;
           this.socket.close();
+          this.state = 'stopped';
         }
       };
       Events(websocketListener);
