@@ -11,6 +11,6 @@ do
   $cmd
   cp -v config.json.example cal*.xml $i
   pushd dist
-  zip -r buttons-are-cool-server-$arch.zip $arch
+  zip -r buttons-are-cool-server-$arch.zip $arch -x $arch/config.json
   popd
 done
