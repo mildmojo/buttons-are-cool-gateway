@@ -2,6 +2,7 @@
   "name": "buttons-are-cool-node",
   "version": "1.0.0-rc6",
   "description": "Node.js server to expose the 100 button USB serial board via HTTP and websockets.",
+  "repository": "https://github.com/mildmojo/buttons-are-cool-node",
   "main": "index.js",
   "bin": "index.js",
   "scripts": {
@@ -26,8 +27,5 @@
     "serialport": "^6.0.0",
     "ws": "^3.2.0",
     "xml2js": "^0.4.19"
-  },
-  "pkg": {
-    "assets": "public/**/*"
   }
 }
