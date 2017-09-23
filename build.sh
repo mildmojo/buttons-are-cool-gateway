@@ -1,16 +1,24 @@
 #!/bin/bash
+version=`node -e 'console.log(require("./package.json").version)'`
 
-for i in dist/*
+for arch in linux-ia32 linux-x64 win32-ia32 win32-x64 darwin-x64
 do
-  [[ ! -d "$i" ]] && continue
-  arch="${i##*/}"
+  distname=buttons-are-cool-gateway-$arch
+  distpath=dist/$distname
+  [[ ! -d "$distpath" ]] && mkdir -p $distpath
   echo
   echo "Building for $arch..."
-  cmd="$(npm bin)/pkg . -t node8-$arch --out-path $i"
+  cmd="$(npm bin)/pkg . -t node8-$arch --out-path $distpath"
+
+  # Build it
   echo $cmd
   $cmd
-  cp -v config.json.example cal*.xml $i
+
+  # Install relevant files
+  cp -v config.json.example cal*.xml $distpath
+
   pushd dist
-  zip -r buttons-are-cool-server-$arch.zip $arch -x $arch/config.json
+  rm -v $distname-*.zip 2>/dev/null
+  zip -r $distname-$version.zip $distname -x $distname/config.json
   popd
 done
