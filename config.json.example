@@ -1,8 +1,6 @@
 {
-  // Set the web server port (you can also use the PORT environment variable)
-  // port: 3000,
-
   // Adjust the serial port names to match your devices.
+  // Run the server with the "--list" argument to list available serial ports.
   // E.g. "COM1" (Windows), "/dev/ttyUSB0" (Linux)
   // "serialPorts": [
   //   "/dev/ttyS0",
@@ -15,8 +13,20 @@
 
   // Set XML mappings; the format of these files came from the sample Unity
   // project at https://github.com/supersoulstudio/100ButtonsExample
+  // These files contain lists of numbers. Hardware button numbers will
+  // be mapped to a new button number defined at that position in the array.
+  // For example, if the first number in the list is 32, the server will report
+  // hardware button 0's status under button 32.
   "mappingFiles": [
     "cal0.xml",
     "cal1.xml"
-  ]
+  ],
+
+  // Set the web server port (you can also use the PORT environment variable).
+  // Setting it to 0 will pick a random available port.
+  "port": 3000,
+
+  // Host on which to listen for connections. Set to "0.0.0.0" or "::" (IPV6) to
+  // listen on all available network interfaces (only do this if needed).
+  "host": "127.0.0.1"
 }
