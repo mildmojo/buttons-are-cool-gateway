@@ -8,6 +8,7 @@
     <script type="text/javascript">
       // Build a hierarchy of DOM nodes for faster manipulation.
       var deviceContainers = [];
+      var activeDeviceNums = [];
 
       function ready(fn) {
         if (document.attachEvent ? document.readyState === "complete" : document.readyState !== "loading"){
@@ -90,7 +91,7 @@
         interval: 300,
         state: 'disconnected',
         loop: null,
-        testMode: false,
+        testmode: false,
         lastDevices: [],
         start: function() {
           this.run();
@@ -104,8 +105,8 @@
               return res.json();
             })
             .then(function(json) {
-              if (json.testMode !== self.testMode) {
-                self.emit('testMode', {isTestMode: json.testMode});
+              if (json.testmode !== self.testmode) {
+                self.emit('testmode', {isTestMode: json.testmode});
               }
               // Devices changed? Initial poll? Refresh everything.
               if (json.devices.length !== self.lastDevices.length) {
@@ -202,12 +203,19 @@
         }
       }
 
+      function showDevice(deviceNum, deviceName) {
+        if (!activeDeviceNums[deviceNum]) {
+          activeDeviceNums[deviceNum] = true;
+          deviceContainers[deviceNum].title.classList.remove('hidden');
+          deviceContainers[deviceNum].title.innerHTML = deviceName;
+          deviceContainers[deviceNum].buttonContainer.classList.remove('hidden');
+        }
+      }
+
       // On buttonUp events, show device title, show device button container,
       // show button status, and remove button "pressed" state.
       function setButtonUp(packet) {
-        deviceContainers[packet.deviceNum].title.classList.remove('hidden');
-        deviceContainers[packet.deviceNum].title.innerHTML = packet.deviceName;
-        deviceContainers[packet.deviceNum].buttonContainer.classList.remove('hidden');
+        showDevice(packet.deviceNum, packet.deviceName);
         deviceContainers[packet.deviceNum].buttons[packet.buttonNum].classList.remove('hidden');
         deviceContainers[packet.deviceNum].buttons[packet.buttonNum].classList.remove('pressed');
       }
@@ -215,9 +223,7 @@
       // On buttonDown events, show device title, show device button container,
       // show button status, and mark button "pressed".
       function setButtonDown(packet) {
-        deviceContainers[packet.deviceNum].title.classList.remove('hidden');
-        deviceContainers[packet.deviceNum].title.innerHTML = packet.deviceName;
-        deviceContainers[packet.deviceNum].buttonContainer.classList.remove('hidden');
+        showDevice(packet.deviceNum, packet.deviceName);
         deviceContainers[packet.deviceNum].buttons[packet.buttonNum].classList.remove('hidden');
         deviceContainers[packet.deviceNum].buttons[packet.buttonNum].classList.add('pressed');
       }
@@ -225,6 +231,10 @@
 
     <style type="text/css">
       @import url('https://fonts.googleapis.com/css?family=Francois+One');
+
+      * {
+        box-sizing: border-box;
+      }
 
       /* Reset */
       html, body, h1, h2, h3, h4, h5, h6, p, ol, ul, li, dl, dt, dd, blockquote, address {
@@ -271,12 +281,14 @@
         display: flex;
         flex-direction: column;
         flex-wrap: nowrap;
+        min-width: 460px;
+        max-width: 600px;
+        width: 50%;
         margin: 0;
-        padding: 10px;
-        min-width: 500px;
-        max-width: 800px;
-        border: 1px solid black;
         margin-top: 10px;
+        padding: 15px;
+        border: 5px solid #888;
+        border-radius: 15px;
       }
 
       .device {
@@ -318,10 +330,12 @@
       }
 
       .device span.icon::after {
+        color: red;
         content: '⭕';
       }
 
       .device .pressed span.icon::after {
+        color: green;
         content: '✅';
       }
     </style>
