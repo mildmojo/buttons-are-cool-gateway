@@ -1,4 +1,4 @@
-# buttons-are-cool-node
+# buttons-are-cool-gateway
 
 ## What's this nonsense, then?
 
@@ -18,8 +18,27 @@ Made for the [100 Button Jam](https://itch.io/jam/100-button-game-jam).
 
 ## HOW TO: The quick and the dirty
 
+0. Download the latest [binary release](https://github.com/mildmojo/buttons-are-cool-gateway/releases).
+1. Unzip it.
+2. Copy `config.json.example` to `config.json` and edit it. Enter the serial
+   port(s) the button board is connected to. (You can list all available serial
+   ports by running `buttons-are-cool-gateway --list`.)
+3. Start the server by running `buttons-are-cool-gateway`.
+4. Visit http://localhost:3000 to see a live visualization of the button board's
+   current state.
+
+You're all set! Use any web or HTTP library in any language to connect to
+http://localhost:3000/buttons, then decode the JSON for use in your own
+software. You can even rip out the contents of `/public` and add your own
+web page and javascript there. The server serves any files in `/public`.
+
+Or use WebSockets. Connect to ws://localhost:3000 and listen for button press
+events. They're faster and more efficient than polling.
+
+## HOW TO: The slower and dirtier process for devs
+
 0. Install [Node.js and npm](https://nodejs.org/en/download/current/).
-1. Download the [latest release](https://github.com/mildmojo/buttons-are-cool-node/releases) (or use the green button at the top right to download or [clone](https://help.github.com/articles/which-remote-url-should-i-use/) the repo).
+1. Download the [latest release](https://github.com/mildmojo/buttons-are-cool-gateway/releases) (or use the green button at the top right to download or [clone](https://help.github.com/articles/which-remote-url-should-i-use/) the repo).
 2. At the command line, switch to the project's folder.
 3. Install yarn: `npm install -g yarn` (optional)
 4. Install project dependencies: `yarn install` (or `npm install`)
@@ -31,14 +50,6 @@ Made for the [100 Button Jam](https://itch.io/jam/100-button-game-jam).
    page. Buttons should flicker as the server simulates activity.
 9. Start the server with the button board attached: `yarn run server`
 10. Reload http://localhost:3000 and see that pressing buttons updates the UI.
-
-You're all set! Use any web or HTTP library in any language to connect to
-http://localhost:3000/buttons, then decode the JSON for use in your own
-software. You can even rip out the contents of `/public` and add your own
-web page and javascript there. The server serves any files in `/public`.
-
-Or use WebSockets. Connect to ws://localhost:3000 and listen for button press
-events. They're faster and more efficient than polling.
 
 ### Configuration
 
