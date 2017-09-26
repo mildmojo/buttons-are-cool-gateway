@@ -1,6 +1,6 @@
 {
   "name": "buttons-are-cool-gateway",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Node.js server to expose the buttonsare.cool 100 button USB serial board via HTTP and websockets.",
   "repository": "https://github.com/mildmojo/buttons-are-cool-gateway",
   "main": "index.js",
