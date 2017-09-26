@@ -76,6 +76,7 @@
           for (var buttonNum = 0; buttonNum < 60; buttonNum++) {
             var div = document.createElement('div');
             div.classList.add('hidden');
+            div.classList.add('button');
             div.innerHTML = '<span class="number-column">' + buttonNum + ':</span> <span class="icon"></span>';
             deviceDiv.appendChild(div);
             deviceContainers[deviceNum].buttons[buttonNum] = div;
@@ -262,23 +263,31 @@
         color: #B099A0;
       }
 
-      .test-mode-note {
+      .if-test-mode {
         display: none;
       }
 
-      .live-mode-note {
+      .if-live-mode {
         display: block;
+      }
+
+      .if-monitor-mode {
+        display: block;
+      }
+
+      .if-control-mode {
+        display: none;
       }
 
       body.test-mode {
         background-color: #FFE6C2;
       }
 
-      body.test-mode .test-mode-note {
+      body.test-mode .if-test-mode {
         display: block;
       }
 
-      body.test-mode .live-mode-note {
+      body.test-mode .if-live-mode {
         display: none;
       }
 
@@ -303,24 +312,35 @@
 
       .device {
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
         flex-wrap: wrap;
         width: 100%;
-        max-height: 300px;
+        height: 100%;
+        max-height: 400px;
       }
 
       .device h2 {
         display: block;
       }
 
-      .device > div {
-        width: 20%;
+      .device .button {
+        width: calc(100% / 7);
+        height: calc(100% / 9);
+        padding: 5px;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        justify-content: space-around;
+        line-height: 1em;
+      }
+
+      .control-mode .button {
+        border: 1px dotted grey;
+        border-radius: 5px;
       }
 
       .number-column {
         display: block;
-        float: left;
-        min-width: 3rem;
       }
 
       .center {
@@ -353,10 +373,17 @@
   <body>
     <div class="center full-width">
       <h2><a class="no-decorate" href="http://buttonsare.cool">1000 Button Project</a> Test Page</h2>
-      <div class='test-mode-note'>(Test Mode)</div>
-      <div class='live-mode-note'>(Live Mode)</div>
+      <div class='if-test-mode'>(Test Mode)</div>
+      <div class='if-live-mode'>(Live Mode)</div>
     </div>
-    <div class="container"></div>
+<!--     <div class="controls center full-width if-test-mode">
+      <span class="if-monitor-mode">Monitor</span>
+      <span class="if-control-mode"><a href="/">Monitor</a></span>
+      |
+      <span class="if-monitor-mode"><a href="/?control=true">Control</a></span>
+      <span class="if-control-mode">Control</span>
+    </div>
+ -->    <div class="container"></div>
     <div><a href="https://github.com/mildmojo/buttons-are-cool-gateway">Get the source</a> on GitHub.</div>
   </body>
 </html>
