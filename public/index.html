@@ -2,7 +2,9 @@
 <html lang="en">
   <head>
     <title>buttons-are-cool server demo</title>
-    <meta charset="utf-8"></meta>
+    <meta charset="utf-8">
+    <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height">
+    <link href="https://fonts.googleapis.com/css?family=Francois+One" rel="stylesheet">
     <script type="text/javascript" src="minivents.min.js"></script>
     <script type="text/javascript" src="dat.gui.min.js"></script>
     <script type="text/javascript">
@@ -30,7 +32,6 @@
         gui.add(guiController, 'startWebSocket');
         gui.add(guiController, 'startHTTPPolling');
         gui.add(httpListener, 'interval').min(100).max(5000);
-        setInterval(() => console.log(guiController.listener.state), 1000);
       });
 
       var guiController = {
@@ -58,10 +59,10 @@
       function createButtons() {
         var container = document.querySelector('.container');
         container.innerHTML = '';
-        for (var deviceNum = 0; deviceNum < 6; deviceNum++) {
+        for (var deviceNum = 0; deviceNum < 1; deviceNum++) {
           deviceContainers[deviceNum] = { buttons: {} };
 
-          var title = document.createElement('h2');
+          var title = document.createElement('h4');
           title.classList.add('device-title');
           title.classList.add('hidden');
           container.appendChild(title);
@@ -69,19 +70,51 @@
 
           var deviceDiv = document.createElement('div');
           deviceDiv.classList.add('device');
-          deviceDiv.classList.add('hidden');
           container.appendChild(deviceDiv);
           deviceContainers[deviceNum].buttonContainer = deviceDiv;
 
-          for (var buttonNum = 0; buttonNum < 60; buttonNum++) {
+          for (var buttonNum = 0; buttonNum < 51; buttonNum++) {
             var div = document.createElement('div');
-            div.classList.add('hidden');
             div.classList.add('button');
-            div.innerHTML = '<span class="number-column">' + buttonNum + ':</span> <span class="icon"></span>';
+            div.innerHTML = '<span class="number-column">' + buttonNum + '</span>';
+
+            addPointerEvents(div, {
+              onButtonDown: function(dnum, bnum) { websocketSender.send('buttonDown:' + dnum + ':' + bnum)}.bind(null, deviceNum, buttonNum),
+              onButtonUp: function(dnum, bnum) { websocketSender.send('buttonUp:' + dnum + ':' + bnum)}.bind(null, deviceNum, buttonNum),
+            });
+
             deviceDiv.appendChild(div);
             deviceContainers[deviceNum].buttons[buttonNum] = div;
           }
         }
+      }
+
+      function addPointerEvents(elem, {onButtonDown, onButtonUp}) {
+        function preventDefault(e) { e.stopPropagation(); e.preventDefault(); }
+        function press(el) {
+          el.classList.add('pressed');
+          onButtonDown();
+        }
+        function release(el) {
+          el.classList.remove('pressed');
+          onButtonUp();
+        }
+
+        elem.addEventListener('mousedown', function(evt) {
+          press(elem);
+          preventDefault(evt);
+        });
+        elem.addEventListener('mouseup', release.bind(null, elem));
+        elem.addEventListener('mouseleave', release.bind(null, elem));
+        elem.addEventListener('mousemove', preventDefault);
+
+        elem.addEventListener('touchstart', function(el, evt) {
+          press(elem);
+          preventDefault(evt);
+        });
+        elem.addEventListener('touchend', release.bind(null, elem));
+        elem.addEventListener('touchcancel', release.bind(null, elem));
+        elem.addEventListener('touchmove', preventDefault);
       }
 
       // ***********************************************************************
@@ -193,14 +226,55 @@
       websocketListener.on('buttonUp', setButtonUp);
       websocketListener.on('buttonDown', setButtonDown);
 
+      var websocketSender = {
+        socket: null,
+        state: 'disconnected',
+        start: function() {
+          var isReconnecting = false;
+          var url = new URL(window.location);
+          var protocol = url.protocol === 'https:' ? 'wss://' : 'ws://';
+          var host = url.host;
+          var path = url.pathname;
+
+          this.socket = new WebSocket(protocol + host + '/' + path);
+
+          this.socket.onopen = function() {
+            console.log('WebSocket sender connected!');
+            this.state = 'connected';
+          }.bind(this);
+          this.socket.onerror = this.socket.onclose = function(err) {
+            if (!isReconnecting) {
+              this.state = 'disconnected';
+              isReconnecting = true;
+              this.start();
+            }
+          }.bind(this);
+        },
+        send: function() {
+          if (!this.socket) return;
+          this.socket.send.apply(this.socket, arguments);
+        },
+        stop: function() {
+          if (!this.socket) return;
+          this.socket.onclose = null;
+          this.socket.close();
+          this.socket = null;
+          this.state = 'stopped';
+        }
+      };
+
+
       // On testMode events, set the test-mode class on the body element to pick
       // up appropriate page style and mode message.
       function setTestMode(packet) {
         var body = document.querySelector('body');
+
         if (packet.isTestMode && !body.classList.contains('test-mode')) {
           body.classList.add('test-mode');
+          websocketSender.start();
         } else if (!packet.isTestMode) {
           body.classList.remove('test-mode');
+          websocketSender.stop();
         }
       }
 
@@ -231,8 +305,6 @@
     </script>
 
     <style type="text/css">
-      @import url('https://fonts.googleapis.com/css?family=Francois+One');
-
       * {
         box-sizing: border-box;
       }
@@ -249,7 +321,7 @@
         justify-content: center;
         align-items: center;
         flex-wrap: nowrap;
-        padding-top: 20px;
+        padding: 20px;
         font-family: "Francois One",Tahoma,Verdana,Sans;
         background-color: #EFFFD9;
         color: #806970;
@@ -291,47 +363,75 @@
         display: none;
       }
 
-      body h2 {
+      body h4 {
         clear: both;
+        font-size: 1.5rem;
       }
 
       .container {
         display: flex;
         flex-direction: column;
         flex-wrap: nowrap;
-        min-width: 460px;
-        max-width: 600px;
-        width: 50%;
+        min-width: 400px;
+        width: 100%;
+        min-height: 80vh;
         margin: 0;
         margin-top: 10px;
         margin-bottom: 10px;
         padding: 15px;
         border: 5px solid #FFC7C2;
         border-radius: 15px;
+        font-size: 2rem;
+      }
+
+      @media all and (max-height: 750px) {
+        body {
+          padding: 5px;
+        }
+
+        .container {
+          margin-top: 0px;
+          padding: 5px;
+        }
+
+        .page-title {
+          display: none;
+        }
       }
 
       .device {
+        margin: 0;
         display: flex;
         flex-direction: row;
         flex-wrap: wrap;
         width: 100%;
         height: 100%;
         max-height: 400px;
+        background-color: none;
       }
 
-      .device h2 {
+      .device .pressed {
+        background-color: rgb(190,230,190);
+      }
+
+      .device h4 {
         display: block;
+        margin-bottom: 0.5rem;
+        font-size: 0.5rem;
       }
 
       .device .button {
         width: calc(100% / 7);
-        height: calc(100% / 9);
         padding: 5px;
         display: flex;
+        flex-grow: 1 0;
         flex-direction: row;
         flex-wrap: nowrap;
         justify-content: space-around;
         line-height: 1em;
+        text-align: right;
+        border: 1px dotted #444;
+        border-radius: 5px;
       }
 
       .control-mode .button {
@@ -358,32 +458,15 @@
       .no-decorate {
         text-decoration: none;
       }
-
-      .device span.icon::after {
-        color: red;
-        content: '⭕';
-      }
-
-      .device .pressed span.icon::after {
-        color: green;
-        content: '✅';
-      }
     </style>
   </head>
   <body>
-    <div class="center full-width">
-      <h2><a class="no-decorate" href="http://buttonsare.cool">1000 Button Project</a> Test Page</h2>
+    <div class="center full-width page-title">
+      <h3><a class="no-decorate" href="http://buttonsare.cool">1000 Button Project</a> Test Page</h3>
       <div class='if-test-mode'>(Test Mode)</div>
       <div class='if-live-mode'>(Live Mode)</div>
     </div>
-<!--     <div class="controls center full-width if-test-mode">
-      <span class="if-monitor-mode">Monitor</span>
-      <span class="if-control-mode"><a href="/">Monitor</a></span>
-      |
-      <span class="if-monitor-mode"><a href="/?control=true">Control</a></span>
-      <span class="if-control-mode">Control</span>
-    </div>
- -->    <div class="container"></div>
+    <div class="container"></div>
     <div><a href="https://github.com/mildmojo/buttons-are-cool-gateway">Get the source</a> on GitHub.</div>
   </body>
 </html>
