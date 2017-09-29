@@ -15,7 +15,7 @@ do
   $cmd
 
   # Install relevant files
-  cp -v config.json.example cal*.xml $distpath
+  cp -v config.json.example cal*.xml README.md LICENSE $distpath
 
   pushd dist
   rm -v $distname-*.zip 2>/dev/null

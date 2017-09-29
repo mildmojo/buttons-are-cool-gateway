@@ -1,3 +1,10 @@
+## v1.1.0
+
+- Adds support for button emulation in testmode; open another browser and click
+  buttons to simulate button presses to be broadcast to other listeners.
+- Adds HOST env var to set --host to listen on.
+- Improves rendering of multiple button devices side-by-side.
+
 ## v1.0.1
 
 - First release for people-who-aren't-me to try out.
