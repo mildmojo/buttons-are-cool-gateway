@@ -32,6 +32,7 @@
         gui.add(guiController, 'startWebSocket');
         gui.add(guiController, 'startHTTPPolling');
         gui.add(httpListener, 'interval').min(100).max(5000);
+        gui.close();
       });
 
       var guiController = {
@@ -59,61 +60,90 @@
       function createButtons() {
         var container = document.querySelector('.container');
         container.innerHTML = '';
-        for (var deviceNum = 0; deviceNum < 1; deviceNum++) {
+        for (var deviceNum = 0; deviceNum < 2; deviceNum++) {
           deviceContainers[deviceNum] = { buttons: {} };
 
+          var deviceDiv = document.createElement('div');
           var title = document.createElement('h4');
           title.classList.add('device-title');
-          title.classList.add('hidden');
-          container.appendChild(title);
+          title.innerHTML = `Device ${deviceNum}`;
+          deviceDiv.appendChild(title);
           deviceContainers[deviceNum].title = title;
 
-          var deviceDiv = document.createElement('div');
           deviceDiv.classList.add('device');
           container.appendChild(deviceDiv);
           deviceContainers[deviceNum].buttonContainer = deviceDiv;
 
+          var buttonsDiv = document.createElement('div');
+          buttonsDiv.classList.add('buttons');
+          deviceDiv.appendChild(buttonsDiv);
+
           for (var buttonNum = 0; buttonNum < 51; buttonNum++) {
             var div = document.createElement('div');
             div.classList.add('button');
-            div.innerHTML = '<span class="number-column">' + buttonNum + '</span>';
+            div.innerHTML = buttonNum;
 
             addPointerEvents(div, {
               onButtonDown: function(dnum, bnum) { websocketSender.send('buttonDown:' + dnum + ':' + bnum)}.bind(null, deviceNum, buttonNum),
               onButtonUp: function(dnum, bnum) { websocketSender.send('buttonUp:' + dnum + ':' + bnum)}.bind(null, deviceNum, buttonNum),
             });
 
-            deviceDiv.appendChild(div);
+            buttonsDiv.appendChild(div);
             deviceContainers[deviceNum].buttons[buttonNum] = div;
           }
         }
       }
 
       function addPointerEvents(elem, {onButtonDown, onButtonUp}) {
-        function preventDefault(e) { e.stopPropagation(); e.preventDefault(); }
+        function preventDefault(e) {
+          e.stopPropagation();
+          e.preventDefault();
+          e.cancelBubble = true;
+          e.returnValue = false;
+        }
         function press(el) {
           el.classList.add('pressed');
           onButtonDown();
         }
         function release(el) {
-          el.classList.remove('pressed');
-          onButtonUp();
+          if (el.classList.contains('pressed')) {
+            el.classList.remove('pressed');
+            onButtonUp();
+          }
         }
 
         elem.addEventListener('mousedown', function(evt) {
           press(elem);
           preventDefault(evt);
+          return false;
         });
-        elem.addEventListener('mouseup', release.bind(null, elem));
-        elem.addEventListener('mouseleave', release.bind(null, elem));
+        elem.addEventListener('mouseup',  function(el, evt) {
+          release(elem);
+          preventDefault(evt);
+          return false;
+        });
+        elem.addEventListener('mouseleave',  function(el, evt) {
+          release(elem);
+          preventDefault(evt);
+          return false;
+        });
         elem.addEventListener('mousemove', preventDefault);
 
         elem.addEventListener('touchstart', function(el, evt) {
           press(elem);
           preventDefault(evt);
+          return false;
         });
-        elem.addEventListener('touchend', release.bind(null, elem));
-        elem.addEventListener('touchcancel', release.bind(null, elem));
+        elem.addEventListener('touchend', function(el, evt) {
+          release(elem);
+          preventDefault(evt);
+          return false;
+        });
+        elem.addEventListener('touchcancel',  function(el, evt) {
+          release(elem);
+          preventDefault(evt);
+          return false;
+        });
         elem.addEventListener('touchmove', preventDefault);
       }
 
@@ -370,8 +400,7 @@
 
       .container {
         display: flex;
-        flex-direction: column;
-        flex-wrap: nowrap;
+        flex-direction: row;
         min-width: 400px;
         width: 100%;
         min-height: 80vh;
@@ -399,28 +428,28 @@
         }
       }
 
-      .device {
+      .buttons {
         margin: 0;
         display: flex;
         flex-direction: row;
         flex-wrap: wrap;
-        width: 100%;
+        width: 99%;
         height: 100%;
         max-height: 400px;
+        min-width: 45%;
         background-color: none;
       }
 
-      .device .pressed {
+      .buttons .pressed {
         background-color: rgb(190,230,190);
       }
 
       .device h4 {
         display: block;
         margin-bottom: 0.5rem;
-        font-size: 0.5rem;
       }
 
-      .device .button {
+      .buttons .button {
         width: calc(100% / 7);
         padding: 5px;
         display: flex;
@@ -432,6 +461,12 @@
         text-align: right;
         border: 1px dotted #444;
         border-radius: 5px;
+        cursor: pointer;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
       }
 
       .control-mode .button {

@@ -5,19 +5,35 @@ const SerialPort = require('serialport');
 const nconf = require('nconf');
 const cjson = require('cjson');
 const chalk = require('chalk');
+const server = require('./lib/server.js');
 const {version} = require('./package.json');
 
 nconf.use('memory').argv().env();
 const configFile = nconf.get('CONFIG_FILE') || nconf.get('config_file') || 'config.json';
 nconf.defaults(readConfig(configFile));
-nconf.set('port', nconf.get('PORT') || nconf.get('port') || 3000)
+nconf.set('port', nconf.get('PORT') || nconf.get('port') || 3000);
+nconf.set('host', nconf.get('HOST') || nconf.get('host') || '127.0.0.1');
 nconf.set('testmode', nconf.get('TESTMODE') || nconf.get('testmode'));
 verifyConfig(nconf);
 
 if (nconf.get('version')) showVersionQuit();
 if (nconf.get('list')) showPortsQuit();
+if (nconf.get('help')) showHelpQuit();
 
-if (nconf.get('help')) {
+(async function() {
+  try {
+    await server.start(nconf);
+  } catch(e) {
+    console.error(`Failed to start server: ${e}`);
+  }
+
+  console.log(chalk.blue.bold('Press CTRL+C to quit.'));
+  spawnChild(nconf.get('wrap-cmd'));
+})();
+
+/******************************************************************************/
+
+function showHelpQuit() {
   console.log('Options:');
   console.log('  --help          - Prints this usage info');
   console.log('  --list          - Prints available serial ports');
@@ -29,31 +45,28 @@ if (nconf.get('help')) {
   process.exit();
 }
 
-const server = require('./lib/server.js');
-server
-  .start(nconf)
-  .then(() => console.log(chalk.blue.bold('Press CTRL+C to quit.')))
-  .then(() => nconf.get('wrap-cmd') && spawnChild())
-  .catch(console.error);
-
 function showVersionQuit() {
   console.log(version);
   process.exit();
 }
 
-function showPortsQuit() {
-  SerialPort.list()
-    .then(portList => {
-      console.log(chalk.yellow.bold("Paste one or more of these serial ports into 'config.json':"));
-      for (let port of portList) {
-        let attrs = Object.keys(port)
-          .filter(key => key !== 'comName')
-          .reduce((sum, key) => port[key] ? sum.concat(`${key}: ${port[key]}`) : sum, []);
-        console.log(chalk.yellow(`"${port.comName}", ` + (attrs.length ? `// ${attrs.join(', ')}` : '')));
-      }
-      process.exit();
-    })
-    .catch(console.error);
+async function showPortsQuit() {
+  let portList;
+
+  try {
+    portList = await SerialPort.list();
+  } catch(e) {
+    return console.error(e);
+  }
+
+  console.log(chalk.yellow.bold("Paste one or more of these serial ports into 'config.json':"));
+  for (let port of portList) {
+    let attrs = Object.keys(port)
+      .filter(key => key !== 'comName')
+      .reduce((sum, key) => port[key] ? sum.concat(`${key}: ${port[key]}`) : sum, []);
+    console.log(chalk.yellow(`"${port.comName}", ` + (attrs.length ? `// ${attrs.join(', ')}` : '')));
+  }
+  process.exit();
 }
 
 function readConfig(file) {
@@ -75,8 +88,8 @@ function verifyConfig(config) {
 }
 
 // Spawn a child process with a suicide pact; parent & child die together.
-function spawnChild() {
-  const cmd = nconf.get('wrap-cmd');
+function spawnChild(cmd) {
+  if (!cmd) return;
   const cwd = nconf.get('wrap-dir');
 
   console.log(chalk.green(`Spawning subprocess '${cmd}'...`))
@@ -87,20 +100,23 @@ function spawnChild() {
   };
   const child = spawn(cmd, [], spawnOpts);
 
+  process.on('SIGINT', onExit);
+  process.on('exit', onExit);
+  child.on('exit', onChildExit)
+
   function onChildExit(code) {
     console.log(chalk.green('Wrapped process exited, server exiting...'));
     process.removeListener('exit', onExit);
     process.exit(code);
   }
+
   function onExit(code) {
     console.log(chalk.green('Exiting, killing subprocess...'))
+
     child.removeAllListeners();
     process.removeListener('exit', onExit);
+
     child.kill.bind(child);
     process.exit(code);
   }
-
-  process.on('SIGINT', onExit);
-  process.on('exit', onExit);
-  child.on('exit', onChildExit)
 }
