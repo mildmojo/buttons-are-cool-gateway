@@ -67,43 +67,6 @@ development environment.
 
 See [config.json.example](/config.json.example) for details.
 
-## Hardware
-
-This server's designed to talk to a [dirt-simple Arduino sketch](/firmware/100buttons/100buttons.ino)
-([original](https://itch.io/jam/100-button-game-jam/topic/140791/code-code-for-the-arduino))
-that polls input pins and assembles multi-byte bitfields representing those
-inputs' states. A complete state packet might look like:
-
-```
-02 00 00 00 00 00 00 01
-```
-
-Bytes arrive in that order, left to right. The least-significant bit (LSB) of
-each byte is reserved; only the top 7 bits of each byte represent Arduino
-inputs, with 1 for "button down" and 0 for "button up". A byte with the LSB set
-is an end-of-message indicator, meaning you can append it to the last 7 bytes
-you received and start decoding the full bitfield.
-
-Each Arduino can serve around 50 buttons. The 100-button board uses two Arduinos
-that appear as separate serial ports. This server treats each as a separate,
-numbered device with its own buttons.
-
-## Upsides of a Web API
-
-- Every development platform and language has a way of talking to the web, so
-  this opens up the 1000 Buttons hardware to lots of potential users.
-- The server's not that complex, so it should scale well. Y'know, probably. If
-  not, there's room to optimize.
-- I got to play with neato Javascript features like async/await, generators, and
-  iterables when I was implementing the server.
-
-## Downsides of a Web API
-
-- Polling latency if you're not using WebSockets. You can poll pretty fast, but
-  you can't possibly poll ths server fast enough for a fighting game to feel
-  good. Definitely use WebSockets if you can. If not, maybe there are other
-  kinds of games you could make?
-
 ## WebSocket events
 
 The WebSocket address is `ws://localhost:3000/`.
@@ -219,6 +182,45 @@ the XML mappings from the 100 Buttons [sample Unity project](https://github.com/
   ]
 }
 ```
+
+## Hardware
+
+This server's designed to talk to a [dirt-simple Arduino sketch](/firmware/100buttons/100buttons.ino)
+([original](https://itch.io/jam/100-button-game-jam/topic/140791/code-code-for-the-arduino))
+that polls input pins and assembles multi-byte bitfields representing those
+inputs' states. A complete state packet might look like:
+
+```
+02 00 00 00 00 00 00 01
+```
+
+Bytes arrive in that order, left to right. The least-significant bit (LSB) of
+each byte is reserved; only the top 7 bits of each byte represent Arduino
+inputs, with 1 for "button down" and 0 for "button up". A byte with the LSB set
+is an end-of-message indicator, meaning you can append it to the last 7 bytes
+you received and start decoding the full bitfield.
+
+Each Arduino can serve around 50 buttons. The 100-button board uses two Arduinos
+that appear as separate serial ports. This server treats each as a separate,
+numbered device with its own buttons.
+
+## Advantages of a Web API
+
+- Every development platform and language has a way of talking to the web, so
+  this opens up the 1000 Buttons hardware to lots of potential users.
+- The server's not that complex, so it should scale well. Y'know, probably. If
+  not, there's room to optimize.
+- Multiple clients can connect at the same time.
+- Clients can connect over a network.
+- I got to play with neato Javascript features like async/await, generators, and
+  iterables when I was implementing the server.
+
+## Disadvantages of a Web API
+
+- Polling latency is bad if you're not using WebSockets. You can poll pretty
+  fast, but you can't possibly poll ths server fast enough for a fighting game
+  to feel good. Definitely use WebSockets if you can. If not, maybe there are
+  other kinds of games you could make?
 
 ## TODO
 
