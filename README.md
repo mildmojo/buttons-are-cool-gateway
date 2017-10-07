@@ -89,7 +89,7 @@ numbered device with its own buttons.
 ## Upsides of a Web API
 
 - Every development platform and language has a way of talking to the web, so
-  this opens the 1000 Buttons hardware up to lots of potential users.
+  this opens up the 1000 Buttons hardware to lots of potential users.
 - The server's not that complex, so it should scale well. Y'know, probably. If
   not, there's room to optimize.
 - I got to play with neato Javascript features like async/await, generators, and
