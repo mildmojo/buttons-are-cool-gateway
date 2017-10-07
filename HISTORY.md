@@ -1,3 +1,11 @@
+## v1.3.0
+
+- [BREAKING] Changes device button list from an object to an array in HTTP
+  `/buttons` reply and in WebSocket `deviceStates` event.
+- Makes test page HTTP polling mode attempt to reconnect every 10s after a failed
+  poll.
+- Fixes player start buttons order in `cal1.xml`.
+
 ## v1.2.0
 
 - Adds `deviceStates` event that fires right after connecting to a WebSocket,

@@ -125,22 +125,22 @@ an HTTP GET to `/buttons`.
     {
       "name": "COM1",
       "buttonCount": 4,
-      "buttons": {
-        "3": false,
-        "4": false,
-        "5": false,
-        "6": false
-      }
+      "buttons": [
+        false,
+        false,
+        false,
+        false
+      ]
     },
     {
       "name": "COM2",
       "buttonCount": 4,
-      "buttons": {
-        "2": false,
-        "3": false,
-        "4": false,
-        "5": false
-      }
+      "buttons": [
+        false,
+        false,
+        false,
+        false
+      ]
     }
   ]
 }
@@ -199,22 +199,22 @@ the XML mappings from the 100 Buttons [sample Unity project](https://github.com/
     {
       "name": "COM1",
       "buttonCount": 4,
-      "buttons": {
-        "3": false,
-        "4": false,
-        "5": false,
-        "6": false
-      }
+      "buttons": [
+        false,
+        false,
+        false,
+        false
+      ]
     },
     {
       "name": "COM2",
       "buttonCount": 4,
-      "buttons": {
-        "2": false,
-        "3": false,
-        "4": false,
-        "5": false
-      }
+      "buttons": [
+        false,
+        false,
+        false,
+        false
+      ]
     }
   ]
 }
