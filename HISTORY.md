@@ -1,3 +1,14 @@
+## v1.2.0
+
+- Adds `deviceStates` event that fires right after connecting to a WebSocket,
+  sending the entire state of the board.
+- Changes JSON returned at `GET /buttons`
+  - [BREAKING] Renames device `length` to `buttonCount`.
+- Fixes a couple of bugs in pointer event handling on test page.
+- Fixes really bad button mapping logic (oops!).
+- Makes test page show number of buttons reported by server.
+- Adds support for more than 2 devices reported by server.
+
 ## v1.1.0
 
 - Adds support for button emulation in testmode; open another browser and click
