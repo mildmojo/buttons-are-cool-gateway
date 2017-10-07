@@ -252,6 +252,7 @@
       };
       Events(websocketListener);
       // Wire up events.
+      websocketListener.on('deviceStates', setAllButtons);
       websocketListener.on('testMode', setTestMode);
       websocketListener.on('buttonUp', setButtonUp);
       websocketListener.on('buttonDown', setButtonDown);
@@ -331,6 +332,22 @@
         showDevice(packet.deviceNum, packet.deviceName);
         deviceContainers[packet.deviceNum].buttons[packet.buttonNum].classList.remove('hidden');
         deviceContainers[packet.deviceNum].buttons[packet.buttonNum].classList.add('pressed');
+      }
+
+      function setAllButtons(packet) {
+        packet.devices.forEach(function(device, deviceIdx) {
+          Object.keys(device.buttons).forEach(function(buttonIdx) {
+            const buttonState = device.buttons[buttonIdx];
+            const buttonElem = deviceContainers[deviceIdx].buttons[buttonIdx];
+            showDevice(deviceIdx, device.name);
+            deviceContainers[deviceIdx].buttons[buttonIdx].classList.remove('hidden');
+            if (buttonState) {
+              buttonElem.classList.add('pressed');
+            } else {
+              buttonElem.classList.remove('pressed');
+            }
+          });
+        });
       }
     </script>
 
