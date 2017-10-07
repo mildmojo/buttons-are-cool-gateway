@@ -1,5 +1,7 @@
 # buttons-are-cool-gateway
 
+![Screenshot of new UI](https://user-images.githubusercontent.com/103495/31005870-8382c74a-a4c8-11e7-8c95-155f8edd3460.png)
+
 ## What's this nonsense, then?
 
 This is a Node.js server that exposes [@barelyconcealed](https://twitter.com/barelyconcealed)'s
