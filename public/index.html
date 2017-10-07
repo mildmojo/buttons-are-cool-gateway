@@ -156,6 +156,7 @@
       // ***********************************************************************
       var httpListener = {
         interval: 300,
+        reconnectInterval: 10000,
         state: 'disconnected',
         loop: null,
         testmode: false,
@@ -169,7 +170,7 @@
           // Call the API.
           fetch('/buttons')
             .then(function(res) {
-              self.state = self.state === 'starting' ? 'connected' : self.state;
+              self.state = self.state !== 'stopped' ? 'connected' : self.state;
               return res.json();
             })
             .then(function(json) {
@@ -206,7 +207,10 @@
                 self.loop = setTimeout(self.run.bind(self), self.interval);
               }
             })
-            .catch(() => self.state = 'disconnected');
+            .catch(() => {
+              self.state = 'disconnected';
+              self.loop = setTimeout(self.run.bind(self), self.reconnectInterval);
+            });
         },
         stop: function() {
           clearInterval(this.loop);
