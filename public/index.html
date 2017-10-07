@@ -191,7 +191,7 @@
                 json.devices.forEach(function(newDevice, deviceIdx) {
                   var oldDevice = self.lastDevices[deviceIdx];
                   // Emit events only for buttons changed since last update.
-                  Object.keys(newDevice.buttons).forEach(function(buttonNum) {
+                  newDevice.buttons.forEach(function(_buttonState, buttonNum) {
                     if (newDevice.buttons[buttonNum] !== oldDevice.buttons[buttonNum]) {
                       var eventName = newDevice.buttons[buttonNum] ? 'buttonDown' : 'buttonUp';
                       self.emit(eventName, {deviceNum: deviceIdx, buttonNum: buttonNum, deviceName: newDevice.name});
@@ -344,11 +344,10 @@
 
       function setAllButtons(packet) {
         packet.devices.forEach(function(device, deviceIdx) {
-          Object.keys(device.buttons).forEach(function(buttonIdx) {
-            const buttonState = device.buttons[buttonIdx];
+          showDevice(deviceIdx, device.name || 'Device ' + deviceIdx);
+          device.buttons.forEach(function(buttonState, buttonIdx) {
             const buttonElem = deviceContainers[deviceIdx].buttons[buttonIdx];
-            showDevice(deviceIdx, device.name);
-            deviceContainers[deviceIdx].buttons[buttonIdx].classList.remove('hidden');
+            buttonElem.classList.remove('hidden');
             if (buttonState) {
               buttonElem.classList.add('pressed');
             } else {
