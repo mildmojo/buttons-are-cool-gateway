@@ -61,7 +61,7 @@
       function createButtons() {
         var container = document.querySelector('.container');
         container.innerHTML = '';
-        for (var deviceNum = 0; deviceNum < 2; deviceNum++) {
+        for (var deviceNum = 0; deviceNum < 20; deviceNum++) {
           deviceContainers[deviceNum] = { buttons: {} };
 
           var deviceDiv = document.createElement('div');
@@ -72,6 +72,7 @@
           deviceContainers[deviceNum].title = title;
 
           deviceDiv.classList.add('device');
+          deviceDiv.classList.add('hidden');
           container.appendChild(deviceDiv);
           deviceContainers[deviceNum].buttonContainer = deviceDiv;
 
@@ -79,9 +80,10 @@
           buttonsDiv.classList.add('buttons');
           deviceDiv.appendChild(buttonsDiv);
 
-          for (var buttonNum = 0; buttonNum < 51; buttonNum++) {
+          for (var buttonNum = 0; buttonNum < 55; buttonNum++) {
             var div = document.createElement('div');
             div.classList.add('button');
+            div.classList.add('hidden');
             div.innerHTML = buttonNum;
 
             addPointerEvents(div, {
@@ -118,12 +120,12 @@
           preventDefault(evt);
           return false;
         });
-        elem.addEventListener('mouseup',  function(el, evt) {
+        elem.addEventListener('mouseup',  function(evt) {
           release(elem);
           preventDefault(evt);
           return false;
         });
-        elem.addEventListener('mouseleave',  function(el, evt) {
+        elem.addEventListener('mouseleave',  function(evt) {
           release(elem);
           preventDefault(evt);
           return false;
@@ -159,6 +161,7 @@
         testmode: false,
         lastDevices: [],
         start: function() {
+          this.state = 'starting';
           this.run();
         },
         run: function() {
@@ -166,7 +169,7 @@
           // Call the API.
           fetch('/buttons')
             .then(function(res) {
-              self.state = 'connected';
+              self.state = self.state === 'starting' ? 'connected' : self.state;
               return res.json();
             })
             .then(function(json) {
@@ -180,7 +183,8 @@
                 json.devices.forEach(function(device, deviceIdx) {
                   Object.keys(device.buttons).forEach(function(buttonNum) {
                     var eventName = device.buttons[buttonNum] ? 'buttonDown' : 'buttonUp';
-                    self.emit(eventName, {deviceNum: deviceIdx, buttonNum: buttonNum, deviceName: device.name});
+                    var eventBody = {deviceNum: deviceIdx, buttonNum: buttonNum, deviceName: device.name};
+                    self.emit(eventName, eventBody);
                   });
                 });
               } else {
@@ -196,8 +200,11 @@
                 });
                 self.lastDevices = json.devices;
               }
-              // Poll again at an interval.
-              self.loop = setTimeout(self.run.bind(self), self.interval);
+
+              if (self.state !== 'stopped') {
+                // Poll again at an interval.
+                self.loop = setTimeout(self.run.bind(self), self.interval);
+              }
             })
             .catch(() => self.state = 'disconnected');
         },
