@@ -27,7 +27,7 @@
         // Set up dat.gui for switching connection types and params at runtime.
         var gui = new dat.GUI();
         gui.add(guiController, 'mode').listen();
-        gui.add(guiController.listener, 'state').listen();
+        gui.add(guiController, 'state').listen();
         gui.add(guiController, 'stopAll');
         gui.add(guiController, 'startWebSocket');
         gui.add(guiController, 'startHTTPPolling');
@@ -38,6 +38,7 @@
       var guiController = {
         mode: 'WebSocket Events',
         listener: null,
+        get state() { return this.listener.state; },
         startWebSocket: function() {
           if (this.listener) this.listener.stop();
           this.mode = 'WebSocket Events';
